@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TACTUS — Vibrotactile Motor Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --bg2: #141414;
+    --bg3: #1a1a1a;
+    --orange: #BF5700;
+    --orange-light: #d96b00;
+    --orange-dim: rgba(191,87,0,0.15);
+    --white: #f0ede8;
+    --muted: #6b6b6b;
+    --border: rgba(255,255,255,0.07);
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --display: 'Bebas Neue', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--sans);
+    font-weight: 300;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='512' height='512' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 3rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(14,14,14,0.85);
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 1.6rem;
+    letter-spacing: 0.08em;
+    color: var(--orange);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--white); }
+
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 0 3rem;
+    padding-top: 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    right: -10%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(191,87,0,0.12) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .hero-left {
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 0.9s ease both;
+  }
+
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .hero-tag::before {
+    content: '';
+    display: block;
+    width: 2rem;
+    height: 1px;
+    background: var(--orange);
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(5rem, 9vw, 9rem);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    margin-bottom: 2rem;
+  }
+
+  h1 span { color: var(--orange); }
+
+  .hero-sub {
+    font-size: 1.05rem;
+    color: rgba(240,237,232,0.65);
+    line-height: 1.75;
+    max-width: 440px;
+    margin-bottom: 3rem;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.85rem 1.8rem;
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    transition: all 0.25s;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+  .btn:hover { background: var(--orange); color: var(--bg); }
+
+  .btn-ghost {
+    border-color: var(--border);
+    color: var(--muted);
+  }
+
+  .btn-ghost:hover { border-color: var(--white); color: var(--white); background: transparent; }
+
+  .hero-right {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeUp 0.9s 0.2s ease both;
+  }
+
+  .paper-img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    filter: grayscale(0.2) contrast(1.1);
+    transition: filter 0.3s ease;
+  }
+
+  .paper-img:hover {
+    filter: grayscale(0) contrast(1);
+  }
+
+  .band-viz {
+    width: 100%;
+    max-width: 520px;
+    position: relative;
+    padding: 1rem;
+    background: var(--bg2);
+    border: 1px solid var(--orange-dim);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+
+  .chip {
+    position: absolute;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    color: var(--orange);
+    background: var(--bg2);
+    border: 1px solid var(--orange-dim);
+    padding: 0.35rem 0.7rem;
+    white-space: nowrap;
+    animation: float 4s ease-in-out infinite;
+    z-index: 5;
+  }
+
+  .chip:nth-child(1) { top: -5%; right: -5%; animation-delay: 0s; }
+  .chip:nth-child(2) { top: 40%; right: -12%; animation-delay: 0.8s; }
+  .chip:nth-child(3) { bottom: -5%; right: -5%; animation-delay: 1.6s; }
+  .chip:nth-child(4) { top: 25%; left: -10%; animation-delay: 0.4s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  section {
+    padding: 7rem 3rem;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    max-width: 80px;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    letter-spacing: 0.03em;
+    line-height: 1;
+    margin-bottom: 1.5rem;
+  }
+
+  .how {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .how-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .how-header {
+    margin-bottom: 4rem;
+  }
+
+  .how-header p {
+    color: rgba(240,237,232,0.55);
+    max-width: 500px;
+    line-height: 1.75;
+    font-size: 0.95rem;
+  }
+
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border: 1px solid var(--border);
+  }
+
+  .pipe-step {
+    padding: 2.5rem 2rem;
+    border-right: 1px solid var(--border);
+    position: relative;
+    transition: background 0.3s;
+  }
+
+  .pipe-step:last-child { border-right: none; }
+
+  .pipe-step:hover { background: var(--bg3); }
+
+  .pipe-num {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--orange);
+    letter-spacing: 0.2em;
+    margin-bottom: 1.5rem;
+    display: block;
+  }
+
+  .pipe-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+  }
+
+  .pipe-img.contain {
+    object-fit: contain;
+    background: var(--bg3);
+    padding: 5px;
+  }
+
+  .pipe-step h3 {
+    font-family: var(--display);
+    font-size: 1.6rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+
+  .pipe-step p {
+    font-size: 0.85rem;
+    color: rgba(240,237,232,0.5);
+    line-height: 1.7;
+  }
+
+  .pipe-arrow {
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 8px solid var(--orange);
+    z-index: 2;
+  }
+
+  .pipe-step:last-child .pipe-arrow { display: none; }
+
+  .specs {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .specs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    margin-top: 3rem;
+  }
+
+  .spec-block h3 {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .spec-row:last-child { border-bottom: none; }
+
+  .spec-key {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .spec-val {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--white);
+  }
+
+  .spec-val.highlight { color: var(--orange); }
+
+  .system {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .system-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .system-header {
+    margin-bottom: 3rem;
+  }
+
+  .system-header p {
+    color: rgba(240,237,232,0.55);
+    max-width: 500px;
+    line-height: 1.75;
+    font-size: 0.95rem;
+  }
+
+  .hardware {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .hw-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .hw-card {
+    border: 1px solid var(--border);
+    padding: 2rem;
+    background: var(--bg2);
+    transition: border-color 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hw-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--orange);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .hw-card:hover { border-color: rgba(191,87,0,0.4); transform: translateY(-4px); }
+  .hw-card:hover::before { transform: scaleX(1); }
+
+  .hw-thumb {
+    width: 100%;
+    height: 120px;
+    object-fit: contain;
+    background: #000;
+    margin-bottom: 1.25rem;
+    padding: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .hw-card h3 {
+    font-family: var(--display);
+    font-size: 1.4rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.6rem;
+    margin-top: auto;
+  }
+
+  .hw-card p {
+    font-size: 0.82rem;
+    color: rgba(240,237,232,0.5);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .hw-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--orange);
+    border: 1px solid var(--orange-dim);
+    padding: 0.2rem 0.5rem;
+    align-self: flex-start;
+  }
+
+  .ticker-wrap {
+    overflow: hidden;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 0.9rem 0;
+  }
+
+  .ticker-track {
+    display: flex;
+    gap: 4rem;
+    width: max-content;
+    animation: ticker 30s linear infinite;
+  }
+
+  .ticker-item {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .ticker-item .dot {
+    width: 4px;
+    height: 4px;
+    background: var(--orange);
+    border-radius: 50%;
+  }
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-logo {
+    font-family: var(--display);
+    font-size: 1.4rem;
+    letter-spacing: 0.08em;
+    color: var(--orange);
+  }
+
+  .footer-text {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">TACTUS</div>
+  <ul class="nav-links">
+    <li><a href="#how">System</a></li>
+    <li><a href="#specs">Specs</a></li>
+    <li><a href="#hardware">Hardware</a></li>
+    <li><a href="#team">Team</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-tag">Medical Robotics FRI · UT Austin</div>
+    <h1>TAC<span>TUS</span></h1>
+    <p class="hero-sub">A wearable vibrotactile band that teaches large motor skills through real-time haptic feedback — guided by computer vision, no instructor required.</p>
+    <div class="hero-cta">
+      <a href="#how" class="btn">Explore the System</a>
+      <a href="#specs" class="btn btn-ghost">View Specs</a>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="band-viz">
+      <img src="tactusband.png" alt="TACTUS Vibrotactile Band Physical Prototype" class="paper-img">
+      <div class="spec-chips">
+        <div class="chip">ESP-NOW · 100m</div>
+        <div class="chip">4 Vibration Motors</div>
+        <div class="chip">IMU Orientation</div>
+        <div class="chip">PLA 3D Printed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <div class="ticker-item"><span class="dot"></span>ESP-NOW Wireless Protocol</div>
+    <div class="ticker-item"><span class="dot"></span>MoveNet Pose Estimation</div>
+    <div class="ticker-item"><span class="dot"></span>115200 Baud Serial</div>
+    <div class="ticker-item"><span class="dot"></span>IMU Wrist Remapping</div>
+    <div class="ticker-item"><span class="dot"></span>Platform.io · C++</div>
+    <div class="ticker-item"><span class="dot"></span>Python Vision Pipeline</div>
+    <div class="ticker-item"><span class="dot"></span>TensorFlow Hub</div>
+    <div class="ticker-item"><span class="dot"></span>KiCad PCB Design</div>
+    <div class="ticker-item"><span class="dot"></span>ESP-NOW Wireless Protocol</div>
+    <div class="ticker-item"><span class="dot"></span>MoveNet Pose Estimation</div>
+    <div class="ticker-item"><span class="dot"></span>115200 Baud Serial</div>
+    <div class="ticker-item"><span class="dot"></span>IMU Wrist Remapping</div>
+    <div class="ticker-item"><span class="dot"></span>Platform.io · C++</div>
+    <div class="ticker-item"><span class="dot"></span>Python Vision Pipeline</div>
+    <div class="ticker-item"><span class="dot"></span>TensorFlow Hub</div>
+    <div class="ticker-item"><span class="dot"></span>KiCad PCB Design</div>
+  </div>
+</div>
+
+<section class="how" id="how">
+  <div class="how-inner">
+    <div class="how-header reveal">
+      <div class="section-label">System Architecture</div>
+      <h2>How TACTUS Works</h2>
+      <p>A three-layer pipeline — computer vision, wireless communication, and haptic actuation — operating in real time with minimal latency.</p>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-step reveal">
+        <span class="pipe-num">01 — Vision</span>
+        <img src="computervision.png" alt="MoveNet Pose Estimation Output" class="pipe-img">
+        <h3>POSE TRACKING</h3>
+        <p>A webcam feeds 192×192 frames into MoveNet SinglePose Lightning, tracking wrist position against a configurable target zone.</p>
+        <div class="pipe-arrow"></div>
+      </div>
+      <div class="pipe-step reveal" style="transition-delay:0.1s">
+        <span class="pipe-num">02 — Logic</span>
+        <img src="directionallogic.png" alt="Directional Logic Diagram" class="pipe-img contain">
+        <h3>DIRECTION LOGIC</h3>
+        <p>When the wrist exits the target zone, Python identifies the boundary crossed and constructs a directional motor command.</p>
+        <div class="pipe-arrow"></div>
+      </div>
+      <div class="pipe-step reveal" style="transition-delay:0.2s">
+        <span class="pipe-num">03 — Haptics</span>
+        <img src="espnowprotocol.png" alt="ESP-NOW Communication Protocol Diagram" class="pipe-img contain">
+        <h3>HAPTIC FEEDBACK</h3>
+        <p>Commands travel wirelessly over ESP-NOW to the band. The onboard IMU corrects for limb rotation to keep feedback accurate.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="system" id="system">
+  <div class="system-inner">
+    <div class="system-header reveal">
+      <div class="section-label">Engineering Schematics</div>
+      <h2>Hardware Implementation</h2>
+      <p>Low-latency signal routing and custom PCB architecture for reliable wireless operation.</p>
+    </div>
+
+    <div class="reveal" style="margin-top:2rem; background: var(--bg3); padding: 2rem; border: 1px solid var(--border);">
+      <img src="schematic.png" alt="Full TACTUS Circuit Schematic" class="paper-img" style="max-height: 500px; object-fit: contain; background: white;">
+    </div>
+  </div>
+</section>
+
+<section id="specs">
+  <div class="specs">
+    <div class="section-label reveal">Technical Specifications</div>
+    <h2 class="reveal">Built to Spec</h2>
+    <div class="specs-grid">
+      <div class="spec-block reveal">
+        <h3>Communication</h3>
+        <div class="spec-row"><span class="spec-key">Protocol</span><span class="spec-val highlight">ESP-NOW</span></div>
+        <div class="spec-row"><span class="spec-key">Range</span><span class="spec-val">Up to 100 m</span></div>
+        <div class="spec-row"><span class="spec-key">Serial Baud Rate</span><span class="spec-val">115,200</span></div>
+        <div class="spec-row"><span class="spec-key">Packet Size</span><span class="spec-val">4 bytes raw</span></div>
+      </div>
+      <div class="spec-block reveal" style="transition-delay:0.1s">
+        <h3>Hardware</h3>
+        <div class="spec-row"><span class="spec-key">Microcontroller</span><span class="spec-val highlight">XIAO ESP32C3</span></div>
+        <div class="spec-row"><span class="spec-key">IMU</span><span class="spec-val">MPU6050</span></div>
+        <div class="spec-row"><span class="spec-key">Motor Driver</span><span class="spec-val">ULN2003A</span></div>
+        <div class="spec-row"><span class="spec-key">Motors</span><span class="spec-val">4× vibration ERM</span></div>
+      </div>
+      <div class="spec-block reveal" style="transition-delay:0.15s">
+        <h3>Software / Vision</h3>
+        <div class="spec-row"><span class="spec-key">Language</span><span class="spec-val highlight">Python</span></div>
+        <div class="spec-row"><span class="spec-key">Model</span><span class="spec-val">MoveNet Lightning</span></div>
+        <div class="spec-row"><span class="spec-key">Input Resolution</span><span class="spec-val">192 × 192 px</span></div>
+        <div class="spec-row"><span class="spec-key">Zone Coords</span><span class="spec-val">Normalized (0–1)</span></div>
+      </div>
+      <div class="spec-block reveal" style="transition-delay:0.2s">
+        <h3>Firmware</h3>
+        <div class="spec-row"><span class="spec-key">Framework</span><span class="spec-val highlight">Arduino / C++</span></div>
+        <div class="spec-row"><span class="spec-key">IDE</span><span class="spec-val">Platform.io / VSCode</span></div>
+        <div class="spec-row"><span class="spec-key">IMU Lib</span><span class="spec-val">electroniccats/MPU6050</span></div>
+        <div class="spec-row"><span class="spec-key">Orientation Correction</span><span class="spec-val">On-band pitch remap</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="hardware">
+  <div class="hardware">
+    <div class="section-label reveal">Physical System</div>
+    <h2 class="reveal">Hardware Components</h2>
+    <div class="hw-grid">
+      <div class="hw-card reveal">
+        <img src="masterpod.png" alt="Master Pod CAD Drawing" class="hw-thumb">
+        <h3>Master Pod</h3>
+        <p>Houses the microcontroller, IMU, and driver. Designed with a snug-fit lid and dedicated wire routing holes.</p>
+        <span class="hw-tag">PLA · Custom PCB</span>
+      </div>
+      <div class="hw-card reveal" style="transition-delay:0.08s">
+        <img src="motorpod.png" alt="Motor Pod CAD Drawing" class="hw-thumb">
+        <h3>Motor Pods</h3>
+        <p>Satellite pods housing ERM vibration motors, delivering corrective feedback.</p>
+        <span class="hw-tag">ERM · Modular</span>
+      </div>
+      <div class="hw-card reveal" style="transition-delay:0.16s">
+        <img src="pcb.png" alt="Tactus Custom PCB Prototype" class="hw-thumb">
+        <img src="custompcb.png" alt="Custom PCB Assembly" class="hw-thumb" style="margin-top: 10px;">
+        <h3>Custom PCB</h3>
+        <p>Designed in KiCad 9.0 to integrate GPIO routing and motor traces in a compact, wearable footprint.</p>
+        <span class="hw-tag">KiCad · Custom Layout</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="team" style="border-top: 1px solid var(--border);">
+  <div style="max-width:1100px; margin:0 auto;">
+    <div class="section-label reveal">The Team</div>
+    <h2 class="reveal">Built at UT Austin</h2>
+    <p class="reveal" style="color:rgba(240,237,232,0.5); margin-bottom:3rem; font-size:0.9rem; line-height:1.7; max-width:500px;">Medical Robotics FRI · Spring 2026 · Supervised by Dr. Ross Neuman.</p>
+    <div class="reveal" style="display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background: var(--border);">
+      <div style="background:var(--bg2); padding:2rem;">
+        <div style="font-family:var(--display); font-size:1.4rem; letter-spacing:0.05em; margin-bottom:0.3rem;">Connor McKelvey</div>
+        <div style="font-family:var(--mono); font-size:0.65rem; letter-spacing:0.15em; color:var(--orange); text-transform:uppercase;">ECE</div>
+      </div>
+      <div style="background:var(--bg2); padding:2rem;">
+        <div style="font-family:var(--display); font-size:1.4rem; letter-spacing:0.05em; margin-bottom:0.3rem;">Kishore Harikrishnan</div>
+        <div style="font-family:var(--mono); font-size:0.65rem; letter-spacing:0.15em; color:var(--orange); text-transform:uppercase;">ECE</div>
+      </div>
+      <div style="background:var(--bg2); padding:2rem;">
+        <div style="font-family:var(--display); font-size:1.4rem; letter-spacing:0.05em; margin-bottom:0.3rem;">Ralph Yraola</div>
+        <div style="font-family:var(--mono); font-size:0.65rem; letter-spacing:0.15em; color:var(--orange); text-transform:uppercase;">CS</div>
+      </div>
+      <div style="background:var(--bg2); padding:2rem;">
+        <div style="font-family:var(--display); font-size:1.4rem; letter-spacing:0.05em; margin-bottom:0.3rem;">Christopher Fortuno</div>
+        <div style="font-family:var(--mono); font-size:0.65rem; letter-spacing:0.15em; color:var(--orange); text-transform:uppercase;">CS</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <div class="footer-logo">TACTUS</div>
+    <div style="font-family:var(--mono); font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; margin-top:0.5rem;">Vibrotactile Band for Large Motor Learning</div>
+  </div>
+  <div class="footer-text">
+    Medical Robotics FRI · The University of Texas at Austin<br>
+    Dr. Ross Neuman · April 2026
+  </div>
+</footer>
+
+<script>
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => observer.observe(el));
+
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    nav.style.borderBottomColor = window.scrollY > 40 ? 'rgba(191,87,0,0.2)' : 'rgba(255,255,255,0.07)';
+  });
+</script>
+</body>
+</html>
